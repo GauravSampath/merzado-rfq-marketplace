@@ -39,6 +39,7 @@ function App() {
     }))
   }
 
+  
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
@@ -46,38 +47,49 @@ function App() {
     setLoading(true)
 
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register'
+      if (isLogin) {
+        // Sign in
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          email: form.email,
+          password: form.password,
+        })
 
-      const payload = isLogin
-        ? {
-            email: form.email,
-            password: form.password,
-          }
-        : {
-            name: form.name,
-            email: form.email,
-            password: form.password,
-            role: form.role,
-          }
+        const { token, user: loggedInUser } = response.data
 
-      const response = await axios.post(`${API_URL}${endpoint}`, payload)
+        if (!token || !loggedInUser) {
+          throw new Error('The server response is missing login information.')
+        }
 
-      const { token, user: loggedInUser } = response.data
+        localStorage.setItem('merzadoToken', token)
+        localStorage.setItem('merzadoUser', JSON.stringify(loggedInUser))
 
-      if (!token || !loggedInUser) {
-        throw new Error('The server response is missing login information.')
+        setUser(loggedInUser)
+        setForm({
+          name: '',
+          email: '',
+          password: '',
+          role: 'buyer',
+        })
+      } else {
+        // Create account — registration does not need to sign the user in
+        await axios.post(`${API_URL}/auth/register`, {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: form.role,
+        })
+
+        setSuccess('Account created successfully! Please sign in now.')
+        setIsLogin(true)
+
+        // Keep the email so the user can sign in easily
+        setForm((previousForm) => ({
+          ...previousForm,
+          name: '',
+          password: '',
+          role: 'buyer',
+        }))
       }
-
-      localStorage.setItem('merzadoToken', token)
-      localStorage.setItem('merzadoUser', JSON.stringify(loggedInUser))
-
-      setUser(loggedInUser)
-      setForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'buyer',
-      })
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -88,7 +100,6 @@ function App() {
       setLoading(false)
     }
   }
-
   const handleLogout = () => {
     localStorage.removeItem('merzadoToken')
     localStorage.removeItem('merzadoUser')
