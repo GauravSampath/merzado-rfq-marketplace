@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import axios from 'axios'
 import './App.css'
@@ -6,7 +5,7 @@ import './App.css'
 import BuyerDashboard from './components/BuyerDashboard'
 import SupplierDashboard from './components/SupplierDashboard'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true)
